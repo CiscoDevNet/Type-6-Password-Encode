@@ -3,6 +3,9 @@ Its main goal is to allow customers to configure IOS boxes with encoded
 passwords; a secondary goal is to allow customers to examine exactly how we
 implement them.
 
+We actually provide two versions, one in C and one in Python (the Python
+version does only type 6).
+
 Now, customers often have their own programs to do network provisioning
 (configuration); if their program does need to download encoded passwords,
 they'll need a way to construct such a password.  This program attempts to
@@ -43,7 +46,12 @@ You can also run the program with:
 This will run a set of sanity tests on the internal routines
 
 
-If you want to integrate these routines with the application, you'll want the
+If you want the Python version, that is located in encode6.py .  That is a
+separate version of the code, and will likely need some tweaking to fit
+within your environment.
+
+
+If you want to integrate the C routines with the application, you'll want the
 routines in these source files:
 
 ios_hash_password.c  ios_encrypt_password.c convert_bitstring.c
