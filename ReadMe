@@ -1,0 +1,198 @@
+This is a utility that is designed to generate IOS type 6, 8 and 9 passwords.
+Its main goal is to allow customers to configure IOS boxes with encoded
+passwords; a secondary goal is to allow customers to examine exactly how we
+implement them.
+
+Now, customers often have their own programs to do network provisioning
+(configuration); if their program does need to download encoded passwords,
+they'll need a way to construct such a password.  This program attempts to
+give multiple ways to integrate with such a program:
+
+- It can be built as a stand-alone utility.  The provisioning application would
+  invoke the utility, and pass the password (and the key for type 6); the
+   stand alone utility encodes the password, and outputs the password to the
+  standard output; the provisioning application would capture it.
+
+- It can be integrated into the provisioning application.  The application
+  would call a C routine that we provide; that routine would generate the
+  password, and return it to the application.
+
+As a stand-alone utility, it would be called with the following arguments:
+ epp -type <value> -password <password> [-key <type 6 key>] [-salt <salt>]
+This computes the value of the password hash, and outputs that to the
+standard output (exits with an EXIT_SUCCESS).
+
+- epp is the name we gave the utility; of course, you can rename it to anything
+  you wish
+- value: this is the hash type.  The supported hash types are:
+  6 (or "aes"): this is the IOS type 6 encryption type
+  8 (or "sha-256"): this is the IOS type 8 hash type
+  9 (or "scrypt"): this is the IOS type 9 hash type
+- password: this is the password to hash
+- key: this is the key to use for type 6 passwords.  If you are generating a
+  type 6 password, this must be provided
+- salt: this is the salt to use.  If one is not provided, we will select a
+  random salt
+
+On failure, this prints nothing to the standard output.  Instead, it
+generates a human readable error on the standard error output, and
+exits with an EXIT_FAILURE.
+
+You can also run the program with:
+ epp -verify
+This will run a set of sanity tests on the internal routines
+
+
+If you want to integrate these routines with the application, you'll want the
+routines in these source files:
+
+ios_hash_password.c  ios_encrypt_password.c convert_bitstring.c
+hmac_sha1.c          hmac_sha256.c        scrypt.c
+endian.c             select_salt.c        pbkdf2.c
+sha1.c               sha256.c             aes.c
+md5.c
+
+The C function that the application will call is:
+
+char *ios_encrypt_password(int type, const char *key, const char *password,
+                        const char *salt, char *buffer, unsigned buffer_len);
+
+char *ios_hash_password(int type, const char *password, const char *salt,
+                        char *buffer, unsigned buffer_len);
+
+The parameters are as follows:
+- type; this is the value 6 (for ios_encrypt_password) or 8 or 9 (for
+         ios_hash_password), depending on whether you've decided to generate
+         a type 6, 8 or 9 password
+- key; for ios_encrypt_password, this is a nul-terminated C string containing
+         the encryption key
+- password; this is a nul-terminated C string containing the password to be
+         encoded
+- salt; this is either NULL, or a nul-terminated C string containing the salt
+         to use when encoding the password.  If NULL, the program will select
+         a salt
+- buffer; this is either NULL, or a buffer to hold the encoded password.  If
+         it is NULL, this routine will malloc a buffer to hold the password
+         (and the caller is expected to free it).  If it is given, then the
+         password will be placed there.
+- buffer_len; if buffer is non-NULL, then this is the length (in bytes) if
+         buffer.  If the encoded password takes more memory than can fit in
+         the buffer, this returns an error (without overrunning the buffer).
+
+These return a pointer to a nul-terminated C string containing the encoded
+password, or NULL on error.
+
+
+In addition, we provide an additional function do_test_vector; it is designed
+to run sanity checks on the various crypto components
+
+It is called by:
+    int passed = do_test_vector( SELFTEST_FOO, print_results );
+where:
+    SELFTEST_FOO indicates the specific primitive to test (SELFTEST_ALL for
+        everything)
+    print_results is a function to print intermediate results; if you are
+        not interested, you can pass NULL
+If the test passed, this returns nonzero
+
+This has been defined this way, so that, if a customer wishes, he can call
+this to run a general sanity test.
+
+If you decide this functionality is something you want, you'll also need
+to compile in the source file test_vector.c; SELFTEST_ALL and friends are
+defined in test_vector.h
+
+
+Here is a summary of the source files included:
+
+aes.c
+	This is a light-weight AES implementation
+convert_bitstring.c
+	This is a utility that converts an arbitrary bitstring, and encode
+        it in the format we use within an encoded password
+endian.c
+	These are simple utilities that translate between byte strings, and
+	4 byte integers.  We need this because the crypto primitives we
+	use interpret byte strings as 4 byte integers of specific endianness;
+	this does the conversion without assuming any specific endianness
+	of the CPU
+epp.c
+	This contains all the logic used if this is compiled as a stand-alone
+	utility.  You don't need it if you're integrating this utility within
+	your application directly.
+hmac_sha1.c
+	This contains an implementation of the HMAC-SHA1 cryptographical
+	primitive.
+hmac_sha256.c
+	This contains an implementation of the HMAC-SHA256 cryptographical
+	primitive.
+ios_encrypt_password.c
+	This contains the main logic used to encode type 6 passwords
+ios_hash_password.c
+	This contains the main logic used to encode type 8 and type 9
+	passwords
+pbkdf2.c
+	This contains an implementation of the PBKDF2-SHA256
+	cryptographical primitive.  Note that is used for both type 8 and
+	type 9 passwords (scrypt, which is what is used with type 9 passwords,
+	calls this as a part of encoding its passwords)
+scrypt.c
+	This contains an implementation of the scrypt cryptographical
+	primitive.
+select_salt.c
+	This contains the logic we use when we select the salt ourselves.
+	Now, there is a point here that you may want to tweak; entropy
+	collection.  When we select salts, we want some amount of entropy,
+	however by living within the restrictions of C89, the sources we
+	have access to aren't great.  What we have in this file should be
+	good enough; however if you want to provide a better source, you
+	are encouraged to do so; see the function get_random_bytes, and
+	modify it to include your better entropy source.
+sha1.c
+	This contains an implementation of the SHA1 cryptographical
+	primitive.
+sha256.c
+	This contains an implementation of the SHA256 cryptographical
+	primitive.
+test_vector.c
+	This contains the sanity checks for this applicatoin
+
+In addition, every .c file (except for epp.c) has a corresponding .h
+file; this gives the API you use to call the functions provided by
+the .c file.
+
+
+Now, here were our goals when we wrote this program:
+- It tries to be maximally portable, because a customer may want to
+  integrate this program (or parts of it) with his management system, and we
+  have no idea what that might be.
+  We try to make this a strictly conforming C89 program; however, we do fall
+  short of the goal in the following aspects:
+  - We leave in the restriction that the computer uses ASCII; that's because
+    this takes an ASCII password from the user, and hashes it.  It's hard to
+    allow someone to use a non-ASCII character set, and still allow all
+    printable ASCII characters.  It might work with a Unicode-based C
+    compiler; I haven't tried it
+  - We assume that we can malloc a reasonable amount of memory (quite
+    modest amounts of type 8, about two megabytes for type 9). If you can't
+    live with that, you probably should get a real computer
+  - The salt generation logic is merely conforming (meaning that it won't
+    necessarily work exactly the same way on all implementations); it'll
+    generate valid salts everywhere, however, the salts it generates may
+    be different on different implementations.  Given that reproducibility
+    is not a goal of our salt generation logic, this was deemed acceptable
+
+  We have C89 strict conformance as a goal because virtually every computer
+  has a C89 compiler somewhere, and most serious computer languages have a
+  provision for making a call into a C89 routine; hence if the customer
+  decides to link this in with their manangement application, we have a good
+  chance of reducing the effort required.
+
+- It ought to be clear what the program is doing.  We're giving this to
+  customers; we want to give people confidence in what we're doing, and they
+  may need to adapt this for their own requirements.  Hence, transparency is
+  a Good Thing; we consciously try to avoid clever (hard to understand) code
+
+A nongoal is performance.  Now, we don't go out of our way to make things
+inefficient, however if there is a conflict between performance and either
+of the other two goals, the other two goals win.
