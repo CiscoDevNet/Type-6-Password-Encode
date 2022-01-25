@@ -19,6 +19,9 @@ give multiple ways to integrate with such a program:
 - It can be integrated into the provisioning application.  The application
   would call a C routine that we provide; that routine would generate the
   password, and return it to the application.
+  
+- The program can take the Python version of the code, and use that instead
+  of the C version.
 
 As a stand-alone utility, it would be called with the following arguments:
  epp -type <value> -password <password> [-key <type 6 key>] [-salt <salt>]
@@ -139,6 +142,10 @@ ios_encrypt_password.c
 ios_hash_password.c
 	This contains the main logic used to encode type 8 and type 9
 	passwords
+md5.c
+	This is an implementation of the MD5 hash routine (which is used
+	within the type 6 password encoding method.  Sorry; that encoding
+	method dates back to when MD5 wasn't thought that badly of...
 pbkdf2.c
 	This contains an implementation of the PBKDF2-SHA256
 	cryptographical primitive.  Note that is used for both type 8 and
