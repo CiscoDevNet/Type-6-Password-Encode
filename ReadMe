@@ -124,6 +124,9 @@ aes.c
 convert_bitstring.c
 	This is a utility that converts an arbitrary bitstring, and encode
         it in the format we use within an encoded password
+encode6.py
+        This is a standalone version of the type 6 encoder/decoder.  It
+	is an independent implementation.
 endian.c
 	These are simple utilities that translate between byte strings, and
 	4 byte integers.  We need this because the crypto primitives we
@@ -145,6 +148,9 @@ ios_encrypt_password.c
 ios_hash_password.c
 	This contains the main logic used to encode type 8 and type 9
 	passwords
+Makefile
+        Makefile to compiler the C version of the library, both the
+        epp application and the epp.a library.
 md5.c
 	This is an implementation of the MD5 hash routine (which is used
 	within the type 6 password encoding method.  Sorry; that encoding
