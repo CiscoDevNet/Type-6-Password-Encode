@@ -210,7 +210,9 @@ Now, here were our goals when we wrote this program:
   has a C89 compiler somewhere, and most serious computer languages have a
   provision for making a call into a C89 routine; hence if the customer
   decides to link this in with their manangement application, we have a good
-  chance of reducing the effort required.
+  chance of reducing the effort required.  And, if you have a later version
+  of C (or C++), that should work too (and you can run 'epp -verify' to
+  check if the compiled version is working properly).
 
 - It ought to be clear what the program is doing.  We're giving this to
   customers; we want to give people confidence in what we're doing, and they
