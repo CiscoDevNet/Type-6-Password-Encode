@@ -4,10 +4,10 @@ passwords; a secondary goal is to allow customers to examine exactly how we
 implement them.
 
 We actually provide two versions, one in C and one in Python (the Python
-version does only type 6).  Note: when I tested it, the Python implementtation
-gave me a syntax error (and not knowing Python, I can't tell if it's an
-actual error, or the version of Python on my system is just too ancient).
-I have verified that the C version works.
+version, which was not written by me, does only type 6).  Note: when I tested
+it, the Python implementtation gave me a syntax error (and not knowing Python,
+I can't tell if it's an actual error, or the version of Python on my system
+is just too ancient).  I have verified that the C version works.
 
 Now, customers often have their own programs to do network provisioning
 (configuration); if their program does need to download encoded passwords,
